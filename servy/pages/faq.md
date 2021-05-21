@@ -6,7 +6,7 @@
 
 - **No, I mean seen Bigfoot *on the refuge*?**
 
-  Oh! Not yet, but we're still looking...
+  Oh! Not yet, but we are still looking ...
 
 - **Can you just show me some code?**
 

@@ -18,9 +18,9 @@ defmodule HandlerTest do
       assert response == """
              HTTP/1.1 200 OK\r
              Content-Type: text/html\r
-             Content-Length: 20\r
+             Content-Length: 21\r
              \r
-             Bears, Lions, Tigers
+             Bears, Lions, Tigers\n
              """
     end
 
@@ -118,9 +118,9 @@ defmodule HandlerTest do
       assert response == """
              HTTP/1.1 200 OK\r
              Content-Type: text/html\r
-             Content-Length: 20\r
+             Content-Length: 21\r
              \r
-             Bears, Lions, Tigers
+             Bears, Lions, Tigers\n
              """
     end
 

@@ -8,9 +8,12 @@ defmodule Servy.Handler do
   import Servy.Plugins, only: [log: 1, rewrite_path: 1, track: 1]
   import Servy.FileHandler, only: [handle_file: 2]
   # import SomeModule, only: :functions or :macros
+  import Servy.View, only: [render: 3]
 
   alias Servy.BearController
   alias Servy.Conv
+  # alias Servy.Fetcher
+  alias Servy.VideoCam
 
   @pages_path Path.expand("pages", File.cwd!())
   @pages_path Path.expand("../../pages", __DIR__)
@@ -33,12 +36,44 @@ defmodule Servy.Handler do
     |> format_response
   end
 
+  def route(%Conv{method: "GET", path: "/sensors"} = conv) do
+    # pid4 = Fetcher.async(fn -> Servy.Tracker.get_location("bigfoot") end)
+
+    # snapshots =
+    #   ["cam-1", "cam-2", "cam-3"]
+    #   |> Enum.map(&Fetcher.async(fn -> VideoCam.get_snapshot(&1) end))
+    #   |> Enum.map(&Fetcher.get_result/1)
+
+    # where_is_bigfoot = Fetcher.get_result(pid4)
+
+    task = Task.async(fn -> Servy.Tracker.get_location("bigfoot") end)
+
+    snapshots =
+      ["cam-1", "cam-2", "cam-3"]
+      |> Enum.map(&Task.async(fn -> VideoCam.get_snapshot(&1) end))
+      |> Enum.map(&Task.await/1)
+
+    where_is_bigfoot = Task.await(task)
+
+    # def render(conv, templates, bindings ) do
+    #   content =
+    #     @templates_path
+    #     |> Path.join(templates)
+    #     |> EEx.eval_file(bindings)
+    #   %{conv | status: 200, resp_body: content}
+    # end
+
+    render(conv, "sensors.eex", snapshots: snapshots, location: where_is_bigfoot)
+
+    #%{conv | status: 200, resp_body: inspect({snapshots, where_is_bigfoot}) <> "\n"}
+  end
+
   # pattern matching with method and path from request
-  # serve markdown pages
+  # serve  markdown pages
   def route(%Conv{method: "GET", path: "/pages/faq"} = conv) do
     @pages_path
     |> Path.join("faq.md")
-    |> File.read
+    |> File.read()
     |> handle_file(conv)
     |> markdown_to_html
   end
@@ -48,6 +83,15 @@ defmodule Servy.Handler do
     |> Path.join("about.html")
     |> File.read()
     |> handle_file(conv)
+  end
+
+  def route(%Conv{method: "GET", path: "/kaboom"} = _conv) do
+    raise "Kaboom!"
+  end
+
+  def route(%Conv{method: "GET", path: "/hibernate/" <> time} = conv) do
+    time |> String.to_integer() |> :timer.sleep()
+    %{conv | status: 200, resp_body: "Awake!\n"}
   end
 
   def route(%Conv{method: "POST", path: "/api/bears"} = conv) do
@@ -73,7 +117,7 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{method: "GET", path: "/wildthings"} = conv) do
-    %{conv | status: 200, resp_body: "Bears, Lions, Tigers"}
+    %{conv | status: 200, resp_body: "Bears, Lions, Tigers\n"}
   end
 
   def route(%Conv{method: "GET", path: "/api/bears"} = conv) do
@@ -99,7 +143,7 @@ defmodule Servy.Handler do
 
   # convert a Markdown file and to HTML
   def markdown_to_html(%Conv{status: 200} = conv) do
-    %{ conv | resp_body: Earmark.as_html!(conv.resp_body) }
+    %{conv | resp_body: Earmark.as_html!(conv.resp_body)}
   end
 
   def markdown_to_html(%Conv{} = conv), do: conv
@@ -199,7 +243,7 @@ end
 # IO.puts(response)
 
 request = """
-GET /pages/faq HTTP/1.1\r
+GET /sensors HTTP/1.1\r
 Host: example.com\r
 User-Agent: ExampleBrowser/1.0\r
 Accept: */*\r
