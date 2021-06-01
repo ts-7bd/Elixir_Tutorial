@@ -14,6 +14,7 @@ defmodule Servy.Handler do
   alias Servy.Conv
   # alias Servy.Fetcher
   alias Servy.VideoCam
+  alias Servy.FourOhFourCounter, as: Counter
 
   @pages_path Path.expand("pages", File.cwd!())
   @pages_path Path.expand("../../pages", __DIR__)
@@ -36,16 +37,31 @@ defmodule Servy.Handler do
     |> format_response
   end
 
+  def route(%Conv{method: "GET", path: "/pledges/new"} = conv) do
+    Servy.PledgeController.new(conv)
+  end
+
+  def route(%Conv{method: "POST", path: "/pledges"} = conv) do
+    Servy.PledgeController.create(conv, conv.params)
+  end
+
+  def route(%Conv{method: "GET", path: "/pledges"} = conv) do
+    Servy.PledgeController.index(conv)
+  end
+
+  # one time with Fetcher
+  # def route(%Conv{method: "GET", path: "/sensors"} = conv) do
+  #   pid4 = Fetcher.async(fn -> Servy.Tracker.get_location("bigfoot") end)
+  #   snapshots =
+  #     ["cam-1", "cam-2", "cam-3"]
+  #     |> Enum.map(&Fetcher.async(fn -> VideoCam.get_snapshot(&1) end))
+  #     |> Enum.map(&Fetcher.get_result/1)
+  #   where_is_bigfoot = Fetcher.get_result(pid4)
+  #   %{conv | status: 200, resp_body: inspect({snapshots, where_is_bigfoot}) <> "\n"}
+  # end
+
+  # another time with Task
   def route(%Conv{method: "GET", path: "/sensors"} = conv) do
-    # pid4 = Fetcher.async(fn -> Servy.Tracker.get_location("bigfoot") end)
-
-    # snapshots =
-    #   ["cam-1", "cam-2", "cam-3"]
-    #   |> Enum.map(&Fetcher.async(fn -> VideoCam.get_snapshot(&1) end))
-    #   |> Enum.map(&Fetcher.get_result/1)
-
-    # where_is_bigfoot = Fetcher.get_result(pid4)
-
     task = Task.async(fn -> Servy.Tracker.get_location("bigfoot") end)
 
     snapshots =
@@ -54,18 +70,7 @@ defmodule Servy.Handler do
       |> Enum.map(&Task.await/1)
 
     where_is_bigfoot = Task.await(task)
-
-    # def render(conv, templates, bindings ) do
-    #   content =
-    #     @templates_path
-    #     |> Path.join(templates)
-    #     |> EEx.eval_file(bindings)
-    #   %{conv | status: 200, resp_body: content}
-    # end
-
     render(conv, "sensors.eex", snapshots: snapshots, location: where_is_bigfoot)
-
-    #%{conv | status: 200, resp_body: inspect({snapshots, where_is_bigfoot}) <> "\n"}
   end
 
   # pattern matching with method and path from request
@@ -137,7 +142,22 @@ defmodule Servy.Handler do
     BearController.delete(conv, conv.params)
   end
 
+  def route(%Conv{method: "GET", path: "/404s"} = conv) do
+    counts = Counter.get_counts()
+
+    %{conv | status: 200, resp_body: inspect(counts)}
+  end
+
   def route(%Conv{path: path} = conv) do
+    # Counter.bump_count(path)
+    # count = Counter.get_count(path)
+    # path2 = Regex.scan(~r/[[:alpha:]]*/u,path) |> List.to_string
+    # response = """
+    # "No #{path} here!\n
+    # #{count+1} people have asked for #{path2}\n
+    # Sorry, they only are a myth."
+    # """
+    # %{conv | status: 404, resp_body: response}
     %{conv | status: 404, resp_body: "No #{path} here!"}
   end
 
@@ -191,7 +211,6 @@ end
 # Accept: */*\r
 # \r
 # """
-
 # response = Servy.Handler.handle(request)
 # IO.puts(response)
 
@@ -202,7 +221,6 @@ end
 # Accept: */*\r
 # \r
 # """
-
 # response = Servy.Handler.handle(request)
 # IO.puts(response)
 
@@ -213,7 +231,6 @@ end
 # Accept: */*\r
 # \r
 # """
-
 # response = Servy.Handler.handle(request)
 # IO.puts(response)
 
@@ -227,7 +244,6 @@ end
 # \r
 # name=Baloo&type=Brown
 # """
-
 # response = Servy.Handler.handle(request)
 # IO.puts(response)
 
@@ -238,12 +254,37 @@ end
 # Accept: */*\r
 # \r
 # """
-
 # response = Servy.Handler.handle(request)
 # IO.puts(response)
 
 request = """
 GET /sensors HTTP/1.1\r
+Host: example.com\r
+User-Agent: ExampleBrowser/1.0\r
+Accept: */*\r
+\r
+"""
+
+response = Servy.Handler.handle(request)
+IO.puts(response)
+
+alias Servy.FourOhFourCounter, as: Counter
+
+Counter.start()
+
+request = """
+GET /bigfoot HTTP/1.1\r
+Host: example.com\r
+User-Agent: ExampleBrowser/1.0\r
+Accept: */*\r
+\r
+"""
+
+response = Servy.Handler.handle(request)
+IO.puts(response)
+
+request = """
+GET /404s HTTP/1.1\r
 Host: example.com\r
 User-Agent: ExampleBrowser/1.0\r
 Accept: */*\r

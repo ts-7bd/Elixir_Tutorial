@@ -5,15 +5,13 @@ defmodule Servy.View do
   @templates_path  Path.expand("templates", File.cwd!)
   #@templates_path "/home/thomas/learn_elixir/servy/templates"
 
-  def render(conv, templates, bindings ) do
-
+  def render(conv, template, bindings \\ []) do
     content =
       @templates_path
-      |> Path.join(templates)
+      |> Path.join(template)
       |> EEx.eval_file(bindings)
 
-    %{conv | status: 200, resp_body: content}
-
+    %{ conv | status: 200, resp_body: content }
   end
 
 end

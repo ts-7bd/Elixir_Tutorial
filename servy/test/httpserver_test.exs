@@ -19,30 +19,11 @@ defmodule HttpServerTest do
     max_concurrent_requests = 10
 
     1..max_concurrent_requests
-    |> Enum.map(fn _x -> Task.async(fn -> HTTPoison.get("http://localhost:5000/wildthings") end) end)
+    |> Enum.map(fn _x ->
+      Task.async(fn -> HTTPoison.get("http://localhost:5000/wildthings") end)
+    end)
     |> Enum.map(&Task.await(&1, :timer.seconds(5)))
     |> Enum.map(&assert_successful_response/1)
-
-    # parent = self()
-
-    # for _ <- 1..max_concurrent_requests do
-    #   spawn(fn ->
-    #     # Send the request
-    #     {:ok, response} = HTTPoison.get("http://localhost:4000/wildthings")
-
-    #     # Send the response back to the parent
-    #     send(parent, {:ok, response})
-    #   end)
-    # end
-
-    # # Await all {:handled, response} messages from spawned processes.
-    # for _ <- 1..max_concurrent_requests do
-    #   receive do
-    #     {:ok, response} ->
-    #       assert response.status_code == 200
-    #       assert response.body == "Bears, Lions, Tigers\n"
-    #   end
-    # end
   end
 
   defp assert_successful_response({:ok, response}) do
@@ -66,7 +47,6 @@ defmodule HttpServerTest do
     requests
     |> Enum.map(fn request -> Task.async(fn -> HTTPoison.get(request) end) end)
     |> Enum.map(&Task.await(&1, :timer.seconds(5)))
-    |> Enum.map(fn {:ok,response} -> assert response.status_code == 200 end)
-
+    |> Enum.map(fn {:ok, response} -> assert response.status_code == 200 end)
   end
 end
