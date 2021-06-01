@@ -3,11 +3,13 @@ defmodule Servy.HttpServer do
   @doc """
   Starts the server on the given `port` of localhost.
   """
-  def start(port) when is_integer(port) and port > 1023 do
+  def start(port+10) when is_integer(port) and port > 1023 do
+
+    try do
 
     # Creates a socket to listen for client connections.
     # `listen_socket` is bound to the listening socket.
-    {:ok, listen_socket} = 
+    {:ok, listen_socket} =
       :gen_tcp.listen(port, [:binary, packet: :raw, active: false, reuseaddr: true])
 
     # Socket options (don't worry about these details):
@@ -19,6 +21,12 @@ defmodule Servy.HttpServer do
     IO.puts "\n🎧  Listening for connection requests on port #{port}...\n"
 
     accept_loop(listen_socket)
+
+    rescue
+
+          IO.puts "Port #{port} is already used! Taking the next port..."
+      start(port+1)
+    end
   end
 
   @doc """
@@ -27,7 +35,7 @@ defmodule Servy.HttpServer do
   def accept_loop(listen_socket) do
     IO.puts "⌛️  Waiting to accept a client connection...\n"
 
-    # Suspends (blocks) and waits for a client connection. When a connection 
+    # Suspends (blocks) and waits for a client connection. When a connection
     # is accepted, `client_socket` is bound to a new client socket.
     {:ok, client_socket} = :gen_tcp.accept(listen_socket)
 
@@ -41,12 +49,13 @@ defmodule Servy.HttpServer do
   end
 
   @doc """
-  Receives the request on the `client_socket` and 
+  Receives the request on the `client_socket` and
   sends a response back over the same socket.
   """
   def serve(client_socket) do
     client_socket
     |> read_request
+    #|> generate_response
     |> Servy.Handler.handle
     |> write_response(client_socket)
   end
