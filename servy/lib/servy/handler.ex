@@ -257,39 +257,38 @@ end
 # response = Servy.Handler.handle(request)
 # IO.puts(response)
 
-request = """
-GET /sensors HTTP/1.1\r
-Host: example.com\r
-User-Agent: ExampleBrowser/1.0\r
-Accept: */*\r
-\r
-"""
+# request = """
+# GET /sensors HTTP/1.1\r
+# Host: example.com\r
+# User-Agent: ExampleBrowser/1.0\r
+# Accept: */*\r
+# \r
+# """
 
-response = Servy.Handler.handle(request)
-IO.puts(response)
+# response = Servy.Handler.handle(request)
+# IO.puts(response)
 
-alias Servy.FourOhFourCounter, as: Counter
 
-Counter.start()
+# Servy.FourOhFourCounter.start()
 
-request = """
-GET /bigfoot HTTP/1.1\r
-Host: example.com\r
-User-Agent: ExampleBrowser/1.0\r
-Accept: */*\r
-\r
-"""
+# request = """
+# GET /bigfoot HTTP/1.1\r
+# Host: example.com\r
+# User-Agent: ExampleBrowser/1.0\r
+# Accept: */*\r
+# \r
+# """
 
-response = Servy.Handler.handle(request)
-IO.puts(response)
+# response = Servy.Handler.handle(request)
+# IO.puts(response)
 
-request = """
-GET /404s HTTP/1.1\r
-Host: example.com\r
-User-Agent: ExampleBrowser/1.0\r
-Accept: */*\r
-\r
-"""
+# request = """
+# GET /404s HTTP/1.1\r
+# Host: example.com\r
+# User-Agent: ExampleBrowser/1.0\r
+# Accept: */*\r
+# \r
+# """
 
-response = Servy.Handler.handle(request)
-IO.puts(response)
+# response = Servy.Handler.handle(request)
+# IO.puts(response)

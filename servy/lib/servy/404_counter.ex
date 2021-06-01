@@ -1,63 +1,71 @@
 defmodule Servy.FourOhFourCounter do
+  alias Servy.GenericServer
+
   @name :four_oh_four_counter
-  @initial_state %{"/bigfoot" => 0, "/nessie" => 0}
 
   # Client interface
+
   def start do
-    pid = spawn(__MODULE__, :listen_loop, [@initial_state])
-    if @name not in Process.registered(), do: Process.register(pid, @name)
-    pid
+    IO.puts("Starting the 404 counter...")
+    GenericServer.start(__MODULE__, %{}, @name)
   end
 
   def bump_count(path) do
-    send(@name, {self(), :bump_count, path})
+    GenericServer.call(@name, {:bump_count, path})
+  end
 
-    receive do {:response, state} -> state end
+  def get_counts do
+    GenericServer.call(@name, :get_counts)
   end
 
   def get_count(path) do
-    send(@name, {self(), :get_count, path})
-
-    receive do {:response, count} -> count end
+    GenericServer.call(@name, {:get_count, path})
   end
 
-  def get_counts() do
-    send(@name, {self(), :get_counts})
-
-    receive do {:response, counts} -> counts end
+  def reset do
+    GenericServer.cast(@name, :reset)
   end
 
-  # Server interface
-  def listen_loop(state) do
-    receive do
-      {sender, :bump_count, path} ->
-        state = Map.update(state, path, 1, &(&1 + 1))
-        send(sender, {:response, :ok})
-        listen_loop(state)
+  # Server Callbacks
 
-      {sender, :get_count, path} ->
-        send(sender, {:response, Map.get(state, path)})
-        listen_loop(state)
+  def handle_call({:bump_count, path}, state) do
+    new_state = Map.update(state, path, 1, &(&1 + 1))
+    {:ok, new_state}
+  end
 
-      {sender, :get_counts} ->
-        send(sender, {:response, state})
-        listen_loop(state)
+  def handle_call(:get_counts, state) do
+    {state, state}
+  end
 
-      unexpected ->
-        IO.puts("Unexpected message: #{inspect(unexpected)}")
-        listen_loop(state)
-    end
+  def handle_call({:get_count, path}, state) do
+    count = Map.get(state, path, 0)
+    {count, state}
+  end
+
+  def handle_cast(:reset, _state) do
+    %{}
   end
 end
 
+"""
 alias Servy.FourOhFourCounter, as: Counter
 
 pid = Counter.start()
-IO.inspect(pid)
+pid
 
-path = "/bigfoot"
-Counter.bump_count(path)
-Counter.bump_count(path)
-Counter.bump_count(path)
-Counter.bump_count(path)
-IO.inspect(Counter.get_count(path), label: "#{String.trim_leading(path, "/")}s")
+send(pid, {:stop, "hammertime"})
+send(pid, {:call, self(), {:bump_count, "/sheep"}})
+
+for _x <- 1..10, do: Counter.bump_count("/bigfoot")
+1..500 |> Enum.each(fn _x -> Counter.bump_count("/aliens") end)
+
+Counter.get_count("/bigfoot")
+
+Counter.get_counts()
+
+
+Counter.reset()
+Counter.get_counts()
+
+
+"""
