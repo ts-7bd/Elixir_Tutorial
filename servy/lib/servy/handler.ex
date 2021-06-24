@@ -8,12 +8,12 @@ defmodule Servy.Handler do
   import Servy.Plugins, only: [log: 1, rewrite_path: 1, track: 1]
   import Servy.FileHandler, only: [handle_file: 2]
   # import SomeModule, only: :functions or :macros
-  import Servy.View, only: [render: 3]
+  # import Servy.View, only: [render: 3]
 
   alias Servy.BearController
   alias Servy.Conv
   # alias Servy.Fetcher
-  alias Servy.VideoCam
+  # alias Servy.VideoCam
   alias Servy.FourOhFourCounter, as: Counter
 
   @pages_path Path.expand("pages", File.cwd!())
@@ -61,16 +61,23 @@ defmodule Servy.Handler do
   # end
 
   # another time with Task
+  # def route(%Conv{method: "GET", path: "/sensors"} = conv) do
+  #   task = Task.async(fn -> Servy.Tracker.get_location("bigfoot") end)
+
+  #   snapshots =
+  #     ["cam-1", "cam-2", "cam-3"]
+  #     |> Enum.map(&Task.async(fn -> VideoCam.get_snapshot(&1) end))
+  #     |> Enum.map(&Task.await/1)
+
+  #   where_is_bigfoot = Task.await(task)
+  #   render(conv, "sensors.eex", snapshots: snapshots, location: where_is_bigfoot)
+  # end
+
+  # a third time with GenServer
   def route(%Conv{method: "GET", path: "/sensors"} = conv) do
-    task = Task.async(fn -> Servy.Tracker.get_location("bigfoot") end)
+    sensor_data = Servy.SensorServer.get_sensor_data()
 
-    snapshots =
-      ["cam-1", "cam-2", "cam-3"]
-      |> Enum.map(&Task.async(fn -> VideoCam.get_snapshot(&1) end))
-      |> Enum.map(&Task.await/1)
-
-    where_is_bigfoot = Task.await(task)
-    render(conv, "sensors.eex", snapshots: snapshots, location: where_is_bigfoot)
+    %{conv | status: 200, resp_body: inspect(sensor_data) <> "\n"}
   end
 
   # pattern matching with method and path from request
@@ -142,10 +149,8 @@ defmodule Servy.Handler do
     BearController.delete(conv, conv.params)
   end
 
-  def route(%Conv{method: "GET", path: "/404s"} = conv) do
-    counts = Counter.get_counts()
-
-    %{conv | status: 200, resp_body: inspect(counts)}
+  def route(%Conv{method: "GET", path: "/404s"}) do
+    Counter.get_counts()
   end
 
   def route(%Conv{path: path} = conv) do
