@@ -3,11 +3,21 @@ defmodule Servy.FourOhFourCounter do
 
   use GenServer
 
+  def child_spec(_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[]]},
+      restart: :permanent,
+      shutdown: 5000,
+      type: :worker
+    }
+  end
+
   # Client interface
 
-  def start do
+  def start_link(_arg) do
     IO.puts("Starting the 404 counter...")
-    GenServer.start(__MODULE__, %{}, name: @name)
+    GenServer.start_link(__MODULE__, %{}, name: @name)
   end
 
   def bump_count(path) do

@@ -3,16 +3,25 @@ defmodule Servy.PledgeServer do
 
   use GenServer
 
+  def child_spec(_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [[]]},
+      restart: :permanent,
+      shutdown: 5000,
+      type: :worker
+    }
+  end
+
   defmodule State do
     defstruct cache_size: 3, pledges: []
   end
 
   # ======== Client interface functions
 
-  def start do
-    IO.puts("Starting the pledge server...")
-    # telling which Module implements the callback module
-    GenServer.start(__MODULE__, %State{}, name: @name)
+  def start_link(_arg) do
+    IO.puts "Starting the pledge server..."
+    GenServer.start_link(__MODULE__, %State{}, name: @name)
   end
 
   def create_pledge(name, amount) do
@@ -31,6 +40,7 @@ defmodule Servy.PledgeServer do
     GenServer.cast(@name, :clear)
   end
 
+  @spec set_cache_size(any) :: :ok
   def set_cache_size(size) do
     GenServer.cast(@name, {:set_cache_size, size})
   end
@@ -74,7 +84,6 @@ defmodule Servy.PledgeServer do
     IO.inspect(message, label: "Can't touch this!")
     {:noreply, state}
   end
-
 
   defp send_pledge_to_service(_name, _amount) do
     # CODE GOES HERE TO SEND PLEDGE TO EXTERNAL SERVICE
