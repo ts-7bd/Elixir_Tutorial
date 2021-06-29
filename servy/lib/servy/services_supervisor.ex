@@ -11,9 +11,9 @@ defmodule Servy.ServicesSupervisor do
     children = [
       Servy.PledgeServer,
       Servy.FourOhFourCounter,
-      {Servy.SensorServer, :frequent}
+      #{Servy.SensorServer, :frequent}
       # {Servy.SensorServer, :infrequent}
-      # {Servy.SensorServer, interval: 60, target: "bigfoot"}
+      {Servy.SensorServer, interval: 10, target: "bigfoot"}
       # %{
       #   id: Servy.SensorServer,
       #   start: {Servy.SensorServer, :start_link, [[interval: 60, target: "bigfoot"]]}
